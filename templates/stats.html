@@ -1,0 +1,31 @@
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container">
+  <h2>Your Focus Stats</h2>
+
+  <p>Total minutes: {{ total }}</p>
+
+  <canvas id="chart" width="300" height="200"></canvas>
+
+  <a href="/dashboard">Back</a>
+</div>
+
+<script>
+fetch("/chart_data")
+  .then(res => res.json())
+  .then(data => {
+    new Chart(document.getElementById("chart"), {
+      type: "line",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: "Minutes focused",
+          data: data.values,
+          fill: false,
+          tension: 0.3
+        }]
+      }
+    });
+  });
+</script>

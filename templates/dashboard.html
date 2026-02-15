@@ -1,0 +1,53 @@
+<link rel="stylesheet" href="/static/style.css">
+
+<div class="container">
+  <h2>Welcome {{ user.email }}</h2>
+  <p>🔥 Streak: {{ streak }} days</p>
+
+  <div class="plant-box">
+    {% if plant.stage == 0 %}
+       <p>🌱 Seed</p>
+    {% elif plant.stage == 1 %}
+     	<p>🌿 Sprout</p>
+    {% elif plant.stage == 2 %}
+       <p>🪴 Plant</p>
+    {% elif plant.stage == 3 %}
+       <p>🌸 Flower</p>
+    {% endif %}
+  </div>
+
+
+
+  <h1 id="time">25:00</h1>
+
+  <button onclick="startTimer()">Start</button>
+  <button onclick="resetTimer()">Reset</button>
+
+  <h3>Your Tasks</h3>
+
+  <form method="POST" action="/add_task">
+    <input name="title" placeholder="New task" required>
+    <button>Add</button>
+  </form>
+
+<ul>
+  {% for task in tasks %}
+    <li>
+      {% if task.done %}
+        <s>{{ task.title }}</s>
+      {% else %}
+        {{ task.title }}
+      {% endif %}
+
+      <a href="/toggle_task/{{ task.id }}">✓</a>
+      <a href="/delete_task/{{ task.id }}">🗑️</a>
+    </li>
+  {% endfor %}
+</ul>
+
+
+  <a href="/stats">View Stats</a>
+  <a href="/logout">Logout</a>
+</div>
+
+<script src="/static/timer.js"></script>
