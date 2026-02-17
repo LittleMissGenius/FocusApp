@@ -74,12 +74,16 @@ def register():
 
 @app.route("/login", methods=["GET","POST"])
 def login():
+    error = None
     if request.method == "POST":
         user = User.query.filter_by(email=request.form["email"]).first()
         if user and check_password_hash(user.password, request.form["password"]):
             login_user(user)
             return redirect("/dashboard")
-    return render_template("login.html")
+        else:
+            error = "Invalid email or password"
+    return render_template("login.html", error=error)
+
 
 @app.route("/dashboard")
 @login_required
@@ -158,14 +162,15 @@ def log_session():
     db.session.commit()
     return "OK"
 
-@app.route("/toggle_task/<int:task_id>")
+@app.route("/complete_task/<int:task_id>", methods=["POST"])
 @login_required
-def toggle_task(task_id):
+def complete_task(task_id):
     task = Task.query.get(task_id)
     if task and task.user_id == current_user.id:
-        task.done = not task.done
+        db.session.delete(task)
         db.session.commit()
     return redirect("/dashboard")
+
 
 @app.route("/delete_task/<int:task_id>")
 @login_required

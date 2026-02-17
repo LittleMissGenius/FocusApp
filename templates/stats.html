@@ -1,31 +1,25 @@
-<link rel="stylesheet" href="/static/style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stats</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
 
 <div class="container">
-  <h2>Your Focus Stats</h2>
+  <div class="card">
+    <h2>Your Focus Stats</h2>
+    <p>Total minutes focused: {{ total }}</p>
 
-  <p>Total minutes: {{ total }}</p>
+    <ul>
+      {% for s in sessions %}
+        <li>{{ s.timestamp.strftime("%Y-%m-%d %H:%M") }} — {{ s.minutes }} minutes</li>
+      {% endfor %}
+    </ul>
 
-  <canvas id="chart" width="300" height="200"></canvas>
-
-  <a href="/dashboard">Back</a>
+    <a href="{{ url_for('dashboard') }}">⬅ Back</a>
+  </div>
 </div>
 
-<script>
-fetch("/chart_data")
-  .then(res => res.json())
-  .then(data => {
-    new Chart(document.getElementById("chart"), {
-      type: "line",
-      data: {
-        labels: data.labels,
-        datasets: [{
-          label: "Minutes focused",
-          data: data.values,
-          fill: false,
-          tension: 0.3
-        }]
-      }
-    });
-  });
-</script>
+</body>
+</html>

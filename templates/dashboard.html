@@ -1,53 +1,77 @@
+
+
 <link rel="stylesheet" href="/static/style.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Plant Focus</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
 
-<div class="container">
-  <h2>Welcome {{ user.email }}</h2>
-  <p>🔥 Streak: {{ streak }} days</p>
+  <div class="container">
 
-  <div class="plant-box">
-    {% if plant.stage == 0 %}
-       <p>🌱 Seed</p>
-    {% elif plant.stage == 1 %}
-     	<p>🌿 Sprout</p>
-    {% elif plant.stage == 2 %}
-       <p>🪴 Plant</p>
-    {% elif plant.stage == 3 %}
-       <p>🌸 Flower</p>
-    {% endif %}
+    <!-- HEADER -->
+<div class="card header">
+  <h1>🌿 Welcome back</h1>
+  <p class="subtitle">Let’s grow something today.</p>
+  <div class="streak">🔥 Streak: {{ streak }}</div>
+
+  <div class="nav-links">
+    <a href="{{ url_for('stats') }}">📊 Stats</a>
+    <a href="{{ url_for('logout') }}">Log out</a>
   </div>
+</div>
+
+    <!-- PLANT -->
+    <div class="card">
+      <h2>Your Plant</h2>
+      <div class="plant-wrapper">
+        <div class="plant">🌱</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress" style="width: {{ progress }}%"></div>
+      </div>
+      <p class="progress-text">{{ progress }}% grown</p>
+    </div>
+
+<!-- TIMER -->
+<div class="card timer-card">
+  <h2>Focus Timer</h2>
+
+  <div id="timer-display" class="timer-display">25:00</div>
+
+  <div class="timer-buttons">
+    <button onclick="startTimer()">▶ Start</button>
+    <button onclick="stopTimer()">⏸ Pause</button>
+    <button onclick="resetTimer()">🔄 Reset</button>
+  </div>
+</div>
 
 
+    <!-- TASKS -->
+<div class="card">
+  <h2>Your Tasks</h2>
 
-  <h1 id="time">25:00</h1>
-
-  <button onclick="startTimer()">Start</button>
-  <button onclick="resetTimer()">Reset</button>
-
-  <h3>Your Tasks</h3>
-
-  <form method="POST" action="/add_task">
-    <input name="title" placeholder="New task" required>
-    <button>Add</button>
+  <form action="{{ url_for('add_task') }}" method="POST" class="task-form">
+    <input type="text" name="title" placeholder="New task..." required>
+    <button type="submit">➕</button>
   </form>
 
-<ul>
   {% for task in tasks %}
-    <li>
-      {% if task.done %}
-        <s>{{ task.title }}</s>
-      {% else %}
-        {{ task.title }}
-      {% endif %}
-
-      <a href="/toggle_task/{{ task.id }}">✓</a>
-      <a href="/delete_task/{{ task.id }}">🗑️</a>
-    </li>
+ <form action="{{ url_for('complete_task', task_id=task.id) }}" method="POST">
+      <label class="task">
+<input type="checkbox" onchange="this.form.submit()">
+        <span>{{ task.title }}</span>
+      </label>
+    </form>
   {% endfor %}
-</ul>
-
-
-  <a href="/stats">View Stats</a>
-  <a href="/logout">Logout</a>
 </div>
+
+  </div>
+
+</body>
+</html>
 
 <script src="/static/timer.js"></script>

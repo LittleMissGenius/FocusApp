@@ -1,56 +1,227 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(to bottom right, #e8f5e9, #f1f8e9);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
   margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #dff3ea, #cfe9dd);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #245c4a;
 }
 
 .container {
+  max-width: 500px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* Cards */
+.card {
   background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  border-radius: 26px;
+  padding: 26px;
+  margin-bottom: 20px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+  animation: fadeIn 0.8s ease;
+}
+
+.header {
   text-align: center;
-  width: 300px;
 }
 
 h1 {
-  font-size: 48px;
-  margin: 20px 0;
-}
-
-input {
-  width: 90%;
-  padding: 10px;
-  margin: 8px 0;
-}
-
-.plant-box {
+  margin: 0;
   font-size: 2rem;
+}
+
+h2 {
+  margin-top: 0;
+  color: #2f7d63;
+}
+
+.subtitle {
+  opacity: 0.8;
+}
+
+/* Streak */
+.streak {
+  margin-top: 10px;
+  background: #eaf7f1;
+  border-radius: 999px;
+  padding: 6px 14px;
+  display: inline-block;
+  font-weight: bold;
+}
+
+/* Plant */
+.plant-wrapper {
+  display: flex;
+  justify-content: center;
   margin: 20px 0;
 }
 
+.plant {
+  font-size: 90px;
+  background: #eaf7f1;
+  border-radius: 50%;
+  padding: 25px;
+  box-shadow: 0 0 30px rgba(120, 200, 160, 0.6);
+  transition: transform 0.3s ease;
+}
 
-button {
-  padding: 10px 15px;
-  border: none;
-  background: #4caf50;
-  color: white;
-  border-radius: 6px;
+.plant:hover {
+  transform: scale(1.05);
+}
+
+/* Progress */
+.progress-bar {
+  background: #eaf7f1;
+  border-radius: 999px;
+  height: 14px;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: linear-gradient(90deg, #5cbf9d, #3ea082);
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+/* Tasks */
+.task {
+  display: flex;
+  align-items: center;
+  background: #eaf7f1;
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 1.05rem;
   cursor: pointer;
-  margin: 5px;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 
-button:hover {
-  background: #43a047;
+.task:hover {
+  background: #def2ea;
+  transform: translateY(-2px);
 }
 
-a {
-  display: block;
-  margin-top: 10px;
+.task input {
+  margin-right: 12px;
+  accent-color: #3ea082;
+  transform: scale(1.2);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.logout {
+  display: inline-block;
+  margin-top: 12px;
+  color: #3ea082;
   text-decoration: none;
-  color: #2e7d32;
+  font-weight: bold;
 }
+.logout:hover {
+  text-decoration: underline;
+}
+
+.task-form {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.task-form input {
+  flex: 1;
+  border: none;
+  padding: 12px;
+  border-radius: 14px;
+  background: #eaf7f1;
+  font-size: 1rem;
+}
+
+.task-form button {
+  margin-left: 10px;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: #3ea082;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.delete-task {
+  color: #e06b6b;
+  text-decoration: none;
+  font-size: 1.2rem;
+  margin-left: 10px;
+}
+
+.delete-task:hover {
+  transform: scale(1.2);
+}
+
+
+let totalTime = 25 * 60; // 25 minutes
+let time = totalTime;
+let interval = null;
+
+function updateDisplay() {
+  let minutes = Math.floor(time / 60);
+  let seconds = time % 60;
+  document.getElementById("timer-display").innerText =
+    `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function startTimer() {
+  if (interval) return;
+
+  interval = setInterval(() => {
+    if (time > 0) {
+      time--;
+      updateDisplay();
+    } else {
+      clearInterval(interval);
+      interval = null;
+
+      fetch("/log_session", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "minutes=25"
+      });
+
+      alert("Session complete! 🌱");
+      resetTimer();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(interval);
+  interval = null;
+}
+
+function resetTimer() {
+  stopTimer();
+  time = totalTime;
+  updateDisplay();
+}
+
+updateDisplay();
+
