@@ -1,25 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Stats</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<div class="container">
-  <div class="card">
-    <h2>Your Focus Stats</h2>
-    <p>Total minutes focused: {{ total }}</p>
+  <div class="container">
 
-    <ul>
-      {% for s in sessions %}
-        <li>{{ s.timestamp.strftime("%Y-%m-%d %H:%M") }} — {{ s.minutes }} minutes</li>
-      {% endfor %}
-    </ul>
+    <div class="card header">
+      <h1>📊 Your Focus Stats</h1>
+      <p class="subtitle">Growth over time 🌱</p>
 
-    <a href="{{ url_for('dashboard') }}">⬅ Back</a>
+      <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">⬅ Back</a>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="focusChart"></canvas>
+    </div>
+
   </div>
-</div>
+
+  <script>
+    const labels = {{ dates | tojson }};
+    const data = {{ totals | tojson }};
+
+    const ctx = document.getElementById('focusChart').getContext('2d');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Minutes focused',
+          data: data,
+          tension: 0.3,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  </script>
 
 </body>
 </html>

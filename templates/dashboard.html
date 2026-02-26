@@ -1,14 +1,13 @@
-
-
-<link rel="stylesheet" href="/static/style.css">
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Plant Focus</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
 </head>
-<body>
+<body class="{% if session.get('theme') == 'dark' %}dark-mode{% endif %}">
+
 
   <div class="container">
 
@@ -18,17 +17,34 @@
   <p class="subtitle">Let’s grow something today.</p>
   <div class="streak">🔥 Streak: {{ streak }}</div>
 
-  <div class="nav-links">
-    <a href="{{ url_for('stats') }}">📊 Stats</a>
-    <a href="{{ url_for('logout') }}">Log out</a>
-  </div>
+ <div class="nav-links">
+  <a href="{{ url_for('stats') }}" class="nav-button">📊 Stats</a>
+  <a href="{{ url_for('logout') }}" class="nav-button">🚪 Logout</a>
+  <form method="POST" action="{{ url_for('toggle_theme') }}">
+    <button type="submit" class="nav-button">
+      {% if session.get('theme') == 'dark' %}
+        ☀️
+      {% else %}
+        🌙
+      {% endif %}
+    </button>
+  </form>
+</div>
+
 </div>
 
     <!-- PLANT -->
     <div class="card">
       <h2>Your Plant</h2>
       <div class="plant-wrapper">
-        <div class="plant">🌱</div>
+        <div class="plant">
+ 	   {% if plant.stage == 0 %}🌰
+  	   {% elif plant.stage == 1 %}🌱
+           {% elif plant.stage == 2 %}🌿
+           {% elif plant.stage == 3 %}🌸
+           {% endif %}
+        </div>
+
       </div>
       <div class="progress-bar">
         <div class="progress" style="width: {{ progress }}%"></div>
@@ -36,16 +52,55 @@
       <p class="progress-text">{{ progress }}% grown</p>
     </div>
 
+<div class="card">
+  <h2>Your Garden</h2>
+
+  {% if history %}
+    <div class="plant-history">
+      {% for p in history %}
+        <div class="flower">🌸</div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="subtitle">Your first flower is on its way 🌱</p>
+  {% endif %}
+</div>
+
+
+
 <!-- TIMER -->
+
 <div class="card timer-card">
-  <h2>Focus Timer</h2>
+  <h2>⏱ Focus Timer</h2>
+
+  <div class="timer-settings">
+    <div class="timer-input">
+      <label>Work</label>
+      <input type="number" id="work-time" value="25" min="1"> min
+    </div>
+    <div class="timer-input">
+      <label>Break</label>
+      <input type="number" id="break-time" value="5" min="1"> min
+    </div>
+  </div>
 
   <div id="timer-display" class="timer-display">25:00</div>
 
   <div class="timer-buttons">
-    <button onclick="startTimer()">▶ Start</button>
-    <button onclick="stopTimer()">⏸ Pause</button>
-    <button onclick="resetTimer()">🔄 Reset</button>
+    <button class="timer-btn" onclick="startTimer('work')">▶ Work</button>
+    <button class="timer-btn" onclick="startTimer('break')">☕ Break</button>
+    <button class="timer-btn" onclick="stopTimer()">⏸ Pause</button>
+    <button class="timer-btn" onclick="resetTimer()">🔄 Reset</button>
+  </div>
+</div>
+
+<div class="focus-meter">
+  <div class="focus-text">
+    Focus Meter: {{ completed_tasks }} / {{ total_tasks }} tasks
+  </div>
+
+  <div class="meter-bg">
+    <div class="meter-fill" style="width: {{ progress }}%;"></div>
   </div>
 </div>
 
@@ -54,24 +109,41 @@
 <div class="card">
   <h2>Your Tasks</h2>
 
-  <form action="{{ url_for('add_task') }}" method="POST" class="task-form">
-    <input type="text" name="title" placeholder="New task..." required>
-    <button type="submit">➕</button>
+<form action="{{ url_for('add_task') }}" method="POST" class="task-form">
+  <input type="text" name="title" placeholder="New task..." required>
+
+  <select name="priority" class="priority-select">
+    <option value="high">🔥 High</option>
+    <option value="medium" selected>🌿 Medium</option>
+    <option value="low">💧 Low</option>
+  </select>
+
+  <button type="submit">➕</button>
+</form>
+
+{% for task in tasks %}
+<div class="task-row">
+  <form action="{{ url_for('complete_task', task_id=task.id) }}" method="POST">
+    <label class="task {{ task.priority }} {% if task.completed %}completed{% endif %}">
+      <input type="checkbox"
+             onchange="this.form.submit()"
+             {% if task.completed %}checked{% endif %}>
+      <span>{{ task.title }}</span>
+    </label>
   </form>
 
-  {% for task in tasks %}
- <form action="{{ url_for('complete_task', task_id=task.id) }}" method="POST">
-      <label class="task">
-<input type="checkbox" onchange="this.form.submit()">
-        <span>{{ task.title }}</span>
-      </label>
-    </form>
-  {% endfor %}
+  <form action="{{ url_for('delete_task', task_id=task.id) }}" method="POST" class="delete-form">
+    <button type="submit" class="delete-task">✖</button>
+  </form>
+</div>
+{% endfor %}
+
 </div>
 
   </div>
 
+<script src="{{ url_for('static', filename='timer.js') }}"></script>
 </body>
 </html>
 
-<script src="/static/timer.js"></script>
+
