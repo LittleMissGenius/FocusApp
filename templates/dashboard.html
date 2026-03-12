@@ -9,10 +9,12 @@
 <body class="{% if session.get('theme') == 'dark' %}dark-mode{% endif %}">
 
 
-  <div class="container">
+<div class="container">
+
 
     <!-- HEADER -->
 <div class="card header">
+
   <h1>🌿 Welcome back</h1>
   <p class="subtitle">Let’s grow something today.</p>
   <div class="streak">🔥 Streak: {{ streak }}</div>
@@ -33,8 +35,10 @@
 
 </div>
 
+<div class="dashboard-grid">
+
     <!-- PLANT -->
-    <div class="card">
+    <div class="card plant-card">
       <h2>Your Plant</h2>
       <div class="plant-wrapper">
         <div class="plant">
@@ -51,10 +55,9 @@
       </div>
       <p class="progress-text">{{ progress }}% grown</p>
     </div>
-
-<div class="card">
+<div class="card garden-card">
   <h2>Your Garden</h2>
-
+  
   {% if history %}
     <div class="plant-history">
       {% for p in history %}
@@ -65,6 +68,7 @@
     <p class="subtitle">Your first flower is on its way 🌱</p>
   {% endif %}
 </div>
+
 
 
 
@@ -106,35 +110,35 @@
 
 
     <!-- TASKS -->
-<div class="card">
+
+<div class="card tasks-card">
   <h2>Your Tasks</h2>
 
-<form action="{{ url_for('add_task') }}" method="POST" class="task-form">
-  <input type="text" name="title" placeholder="New task..." required>
+<form id="taskForm">
 
-  <select name="priority" class="priority-select">
-    <option value="high">🔥 High</option>
-    <option value="medium" selected>🌿 Medium</option>
-    <option value="low">💧 Low</option>
-  </select>
+<input type="text" name="task" id="taskInput" required>
 
-  <button type="submit">➕</button>
+<select name="priority" class="priority-select">
+  <option value="high">🔥 High</option>
+  <option value="medium" selected>🌿 Medium</option>
+  <option value="low">💧 Low</option>
+</select>
+
+<button type="submit">➕</button>
+
 </form>
 
-{% for task in tasks %}
-<div class="task-row">
-  <form action="{{ url_for('complete_task', task_id=task.id) }}" method="POST">
-    <label class="task {{ task.priority }} {% if task.completed %}completed{% endif %}">
-      <input type="checkbox"
-             onchange="this.form.submit()"
-             {% if task.completed %}checked{% endif %}>
-      <span>{{ task.title }}</span>
-    </label>
-  </form>
 
-  <form action="{{ url_for('delete_task', task_id=task.id) }}" method="POST" class="delete-form">
-    <button type="submit" class="delete-task">✖</button>
-  </form>
+<div id="taskList">
+
+{% for task in tasks %}
+<div class="task-row" id="task-{{ task.id }}">
+  <label class="task {{ task.priority }} {% if task.completed %}completed{% endif %}">
+      <span>{{ task.title }}</span>
+  </label>
+
+  <button onclick="deleteTask({{ task.id }}, this)" class="delete-task">✖</button>
+
 </div>
 {% endfor %}
 
@@ -143,7 +147,59 @@
   </div>
 
 <script src="{{ url_for('static', filename='timer.js') }}"></script>
+<script>
+
+const form = document.getElementById("taskForm");
+const taskInput = document.getElementById("taskInput");
+<form method="POST" action="{{ url_for('add_task') }}">
+
+
+form.addEventListener("submit", async function(e) {
+    e.preventDefault(); // stops page reload
+
+    const taskText = taskInput.value;
+
+    const response = await fetch("/add_task", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "task=" + encodeURIComponent(taskText)
+    });
+
+    const data = await response.json();
+
+const div = document.createElement("div");
+div.className = "task-row";
+div.id = "task-" + data.id;
+
+div.innerHTML = `
+    <span>${data.text}</span>
+    <button onclick="deleteTask(${data.id}, this)" class="delete-task">✖</button>
+`;
+
+taskList.appendChild(div);
+
+
+    taskInput.value = "";
+});
+
+async function deleteTask(id, button) {
+
+    await fetch("/delete_task/" + id, {
+        method: "POST"
+    });
+
+    const taskRow = button.closest(".task-row");
+    taskRow.remove();
+}
+
+
+</script>
+
 </body>
+</div>
+
 </html>
 
 

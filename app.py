@@ -1,10 +1,12 @@
-from flask import Flask, render_template, redirect, request, url_for, session
+from flask import Flask, render_template, redirect, request, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from datetime import date
+
+
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "devkey"
@@ -95,32 +97,36 @@ def login():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    tasks = Task.query.filter_by(user_id=current_user.id).all()
-    streak = get_streak(current_user.id)
 
-    total_tasks = len(tasks)
-    completed_tasks = len([t for t in tasks if t.completed])
+   tasks = Task.query.filter_by(user_id=current_user.id)\
+        .order_by(Task.completed, Task.id.desc())\
+        .all()
 
-    progress = 0
-    if total_tasks > 0:
+   streak = get_streak(current_user.id)
+
+   total_tasks = len(tasks)
+   completed_tasks = len([t for t in tasks if t.completed])
+
+   progress = 0
+   if total_tasks > 0:
         progress = int((completed_tasks / total_tasks) * 100)
 
-    active_plant = Plant.query.filter_by(
+   active_plant = Plant.query.filter_by(
         user_id=current_user.id,
         completed=False
     ).first()
 
-    if not active_plant:
+   if not active_plant:
         active_plant = Plant(user_id=current_user.id)
         db.session.add(active_plant)
         db.session.commit()
 
-    plant_history = Plant.query.filter_by(
+   plant_history = Plant.query.filter_by(
         user_id=current_user.id,
         completed=True
     ).order_by(Plant.created_at).all()
 
-    return render_template(
+   return render_template(
         "dashboard.html",
         tasks=tasks,
         streak=streak,
@@ -136,18 +142,24 @@ def dashboard():
 @app.route("/add_task", methods=["POST"])
 @login_required
 def add_task():
-    title = request.form.get("title")
-    priority = request.form.get("priority")
+    task_text = request.form.get("task")
+
+    priority = request.form.get("priority", "medium")
 
     task = Task(
-        title=title,
+        title=task_text,
         priority=priority,
         user_id=current_user.id
     )
 
     db.session.add(task)
     db.session.commit()
-    return redirect("/dashboard")
+
+return redirect(url_for("dashboard"))
+
+    })
+
+
 
 
 @app.route("/stats")
@@ -217,7 +229,10 @@ def log_session():
     # If fully grown → archive and spawn new plant
     if plant.stage >= 3:
         plant.stage = 3
-        plant.completed = True
+        plant.completed = TruE
+
+    if plant.stage < 3:
+       plant.stage += 1
 
         new_plant = Plant(user_id=current_user.id)
         db.session.add(new_plant)
@@ -229,21 +244,26 @@ def log_session():
 @login_required
 def complete_task(task_id):
     task = Task.query.get_or_404(task_id)
+
+    if task.user_id != current_user.id:
+         abort(403)
+
     task.completed = not task.completed
     db.session.commit()
+
     return redirect(url_for("dashboard"))
 
 
-@app.route("/delete_task/<int:task_id>", methods=["POST"])
+@app.route("/delete_task/<int:id>", methods=["POST"])
 @login_required
-def delete_task(task_id):
-    task = Task.query.get_or_404(task_id)
-    if task.user_id != current_user.id:
-        return redirect(url_for("dashboard"))
-
+def delete_task(id):
+    task = Task.query.get_or_404(id)
     db.session.delete(task)
     db.session.commit()
-    return redirect(url_for("dashboard"))
+
+return redirect(url_for("dashboard"))
+
+
 
 @app.route("/toggle_theme", methods=["POST"])
 @login_required

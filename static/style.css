@@ -584,3 +584,67 @@ body {
 .progress, .meter-fill {
   background-color: var(--progress-fill);
 }
+
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 20px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+
+.plant-card {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.garden-card {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.focus-meter {
+  grid-column: 1 / span 2;   /* spans both columns */
+  grid-row: 2;
+  justify-self: center;
+  width: 80%;
+}
+
+.timer-card {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.tasks-card {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+
+
+.plant-wrapper {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plant {
+  font-size: 70px;
+}
+
+.card.header {
+  width: 100%;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+
+.timer-card,
+.tasks-card {
+  min-height: 100px;
+}
+
