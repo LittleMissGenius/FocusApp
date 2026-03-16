@@ -12,12 +12,15 @@
 <div class="container">
 
 
+
     <!-- HEADER -->
 <div class="card header">
 
   <h1>🌿 Welcome back</h1>
   <p class="subtitle">Let’s grow something today.</p>
-  <div class="streak">🔥 Streak: {{ streak }}</div>
+  <div class="streak">
+    🔥 <span id="streak-count">{{ streak }}</span> Day Streak
+  </div>
 
  <div class="nav-links">
   <a href="{{ url_for('stats') }}" class="nav-button">📊 Stats</a>
@@ -38,36 +41,51 @@
 <div class="dashboard-grid">
 
     <!-- PLANT -->
-    <div class="card plant-card">
-      <h2>Your Plant</h2>
-      <div class="plant-wrapper">
-        <div class="plant">
- 	   {% if plant.stage == 0 %}🌰
-  	   {% elif plant.stage == 1 %}🌱
-           {% elif plant.stage == 2 %}🌿
-           {% elif plant.stage == 3 %}🌸
-           {% endif %}
-        </div>
-
-      </div>
-      <div class="progress-bar">
-        <div class="progress" style="width: {{ progress }}%"></div>
-      </div>
-      <p class="progress-text">{{ progress }}% grown</p>
-    </div>
-<div class="card garden-card">
-  <h2>Your Garden</h2>
-  
-  {% if history %}
-    <div class="plant-history">
-      {% for p in history %}
-        <div class="flower">🌸</div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="subtitle">Your first flower is on its way 🌱</p>
-  {% endif %}
+<div class="card plant-card">
+    <h2>Your Plant</h2>
+    <div class="plant-wrapper">
+        <div class="plant" id="main-plant-emoji">
+    {% if plant %}
+        {% if plant.stage == 0 %}🌰
+        {% elif plant.stage == 1 %}🌱
+        {% elif plant.stage == 2 %}🌿
+        {% elif plant.stage == 3 %}🌸
+        {% else %}🌰
+        {% endif %}
+    {% else %}
+        🌰
+    {% endif %}
 </div>
+    </div>
+    
+    <button id="harvest-btn" 
+            onclick="harvest()" 
+            class="harvest-button" 
+            style="display: {% if plant.stage >= 3 %}block{% else %}none{% endif %};">
+        Harvest & Replant ✨
+    </button>
+
+    <div class="progress-bar">
+        <div id="meter-fill" class="meter-fill" style="width: {{ progress }}%;"></div>
+    </div>
+    <p class="progress-text" id="progress-text">{{ progress }}% grown</p>
+</div>
+
+
+
+<div class="card garden-card">
+    <h2>My Garden</h2>
+    <div class="plant-history">
+        {% for flower in garden %}
+            <span class="flower" title="Harvested on {{ flower.date_harvested.strftime('%Y-%m-%d') }}">
+                {{ flower.flower_type }}
+            </span>
+        {% else %}
+            <p class="subtitle">No flowers yet. Keep focusing to grow your garden!</p>
+        {% endfor %}
+    </div>
+</div>
+
 
 
 
@@ -98,15 +116,7 @@
   </div>
 </div>
 
-<div class="focus-meter">
-  <div class="focus-text">
-    Focus Meter: {{ completed_tasks }} / {{ total_tasks }} tasks
-  </div>
 
-  <div class="meter-bg">
-    <div class="meter-fill" style="width: {{ progress }}%;"></div>
-  </div>
-</div>
 
 
     <!-- TASKS -->
@@ -114,18 +124,18 @@
 <div class="card tasks-card">
   <h2>Your Tasks</h2>
 
-<form id="taskForm">
-
-<input type="text" name="task" id="taskInput" required>
-
-<select name="priority" class="priority-select">
-  <option value="high">🔥 High</option>
-  <option value="medium" selected>🌿 Medium</option>
-  <option value="low">💧 Low</option>
-</select>
-
-<button type="submit">➕</button>
-
+<form id="taskForm" class="task-form-container">
+  <div class="input-wrapper">
+    <input type="text" name="task" id="taskInput" placeholder="What are we growing today?" required>
+    
+    <select name="priority" class="priority-select">
+      <option value="high">🔥 High</option>
+      <option value="medium" selected>🌿 Medium</option>
+      <option value="low">💧 Low</option>
+    </select>
+    
+    <button type="submit" class="add-btn">Add Task</button>
+  </div>
 </form>
 
 
@@ -134,12 +144,14 @@
 {% for task in tasks %}
 <div class="task-row" id="task-{{ task.id }}">
   <label class="task {{ task.priority }} {% if task.completed %}completed{% endif %}">
+      <input type="checkbox" 
+             {% if task.completed %}checked{% endif %} 
+             onclick="toggleTask({{ task.id }}, this)">
       <span>{{ task.title }}</span>
   </label>
-
   <button onclick="deleteTask({{ task.id }}, this)" class="delete-task">✖</button>
-
 </div>
+
 {% endfor %}
 
 </div>
@@ -151,49 +163,162 @@
 
 const form = document.getElementById("taskForm");
 const taskInput = document.getElementById("taskInput");
-<form method="POST" action="{{ url_for('add_task') }}">
-
+const taskList = document.getElementById("taskList");
 
 form.addEventListener("submit", async function(e) {
-    e.preventDefault(); // stops page reload
+    e.preventDefault(); 
 
-    const taskText = taskInput.value;
-
+    const formData = new FormData(form);
     const response = await fetch("/add_task", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: "task=" + encodeURIComponent(taskText)
+        body: formData
     });
 
-    const data = await response.json();
+    if (response.ok) {
+        const data = await response.json();
 
-const div = document.createElement("div");
-div.className = "task-row";
-div.id = "task-" + data.id;
+        const div = document.createElement("div");
+        div.className = "task-row";
+        div.id = "task-" + data.id;
 
-div.innerHTML = `
-    <span>${data.text}</span>
-    <button onclick="deleteTask(${data.id}, this)" class="delete-task">✖</button>
-`;
+        // FIX: Added the 'onclick' to the checkbox here!
+        div.innerHTML = `
+            <label class="task ${data.priority}">
+                <input type="checkbox" onclick="toggleTask(${data.id}, this)">
+                <span>${data.title}</span>
+            </label>
+            <button onclick="deleteTask(${data.id}, this)" class="delete-task">✖</button>
+        `;
 
-taskList.appendChild(div);
+        taskList.prepend(div);
+        taskInput.value = "";
 
+        // UPDATE THE METER TOTAL:
+        const totalText = document.getElementById("total-text");
+        let currentTotal = parseInt(totalText.innerText);
+        totalText.innerText = currentTotal + 1;
 
-    taskInput.value = "";
+        // RECALCULATE PERCENTAGE:
+        updateProgressBar();
+    }
 });
 
 async function deleteTask(id, button) {
-
-    await fetch("/delete_task/" + id, {
+    const response = await fetch("/delete_task/" + id, {
         method: "POST"
     });
 
-    const taskRow = button.closest(".task-row");
-    taskRow.remove();
+    if (response.ok) {
+        const taskRow = button.closest(".task-row");
+        const isCompleted = taskRow.querySelector('input').checked;
+        taskRow.remove();
+
+        // Update counts
+        const totalText = document.getElementById("total-text");
+        totalText.innerText = parseInt(totalText.innerText) - 1;
+
+        if (isCompleted) {
+            const completedText = document.getElementById("completed-text");
+            completedText.innerText = parseInt(completedText.innerText) - 1;
+        }
+
+        updateProgressBar();
+    }
 }
 
+async function toggleTask(id, checkbox) {
+    try {
+        const response = await fetch("/complete_task/" + id, { method: "POST" });
+        const data = await response.json();
+
+        if (data.success) {
+            // 1. Update Plant Emoji
+            const plantDiv = document.getElementById("main-plant-emoji");
+            const emojis = ["🌰", "🌱", "🌿", "🌸"];
+            if (plantDiv) plantDiv.innerText = emojis[data.plant_stage];
+
+            // 2. Update the Bar and Text using the DATA from the server
+            const meter = document.getElementById("meter-fill");
+            const progText = document.getElementById("progress-text");
+            
+            if (meter) {
+                meter.style.width = data.progress + "%";
+		console.log("Bar width set to: " + data.progress + "%");
+                // Trigger Pulse
+                meter.classList.remove("pulse-active");
+                void meter.offsetWidth; 
+                meter.classList.add("pulse-active");
+            }
+            if (progText) progText.innerText = data.progress + "% grown";
+
+            // 3. Toggle Harvest Button
+            const harvestBtn = document.getElementById("harvest-btn");
+            if (harvestBtn) {
+                harvestBtn.style.display = (data.plant_stage >= 3) ? "block" : "none";
+            }
+
+            // 4. Strikethrough
+            checkbox.closest('label').classList.toggle('completed');
+        }
+    } catch (err) {
+        console.error("Task update failed:", err);
+    }
+}
+
+
+async function harvest() {
+    try {
+        const response = await fetch("/harvest_plant", { method: "POST" });
+        const data = await response.json();
+
+        if (data.success) {
+            // 1. Manually reset the colored bar to 0%
+            const meter = document.getElementById("meter-fill");
+            if (meter) {
+                meter.style.width = "0%";
+                meter.classList.remove("pulse-active"); // Stop the glowing animation
+            }
+
+            // 2. Manually reset the text to 0% grown
+            const progText = document.getElementById("progress-text");
+            if (progText) {
+                progText.innerText = "0% grown";
+            }
+
+            // 3. Reset the Plant Emoji to the Seed
+            const plantDiv = document.getElementById("main-plant-emoji");
+            if (plantDiv) {
+                plantDiv.innerText = "🌰";
+            }
+
+            // 4. Hide the harvest button immediately
+            document.getElementById("harvest-btn").style.display = "none";
+
+            // 5. WAIT 500ms so the user sees the reset animation, then reload
+            setTimeout(() => {
+                window.location.reload();
+            }, 500); 
+
+        } else {
+            alert("Oops! " + data.error);
+        }
+    } catch (error) {
+        console.error("Harvest failed:", error);
+    }
+}
+
+function updateProgressBar() {
+    // We calculate percentages based on the data sent from Python now
+    // instead of grabbing them from the screen.
+    const meter = document.getElementById("meter-fill");
+    
+    // We'll pass the progress as an argument or let the toggleTask handle it
+    if (meter) {
+        meter.classList.remove("pulse-active");
+        void meter.offsetWidth; 
+        meter.classList.add("pulse-active");
+    }
+}
 
 </script>
 

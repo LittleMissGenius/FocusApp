@@ -17,8 +17,8 @@ body {
 
 /* Containers */
 .container {
-  max-width: 500px;
-  margin: auto;
+  max-width: 820px;
+  margin: 0 auto;
   padding: 20px;
 }
 
@@ -82,9 +82,14 @@ canvas {
   background: white;
   border-radius: 26px;
   padding: 26px;
-  margin-bottom: 20px;
+  margin-bottom: 0px;
   box-shadow: 0 15px 30px rgba(0,0,0,0.08);
   animation: fadeIn 0.8s ease;
+  width: 100%;
+  min-height: 250px; /* Forces cards to stay the same height for     symmetry */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .card canvas {
@@ -112,12 +117,14 @@ h2 {
 
 /* Streak */
 .streak {
-  margin-top: 10px;
-  background: #eaf7f1;
-  border-radius: 999px;
-  padding: 6px 14px;
-  display: inline-block;
-  font-weight: bold;
+    display: inline-block;
+    background-color: #fef3c7 !important; /* Soft gold/yellow */
+    color: #92400e !important;           /* Deep orange/brown */
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    border: 1px solid #fde68a;
 }
 
 /* Plant */
@@ -282,20 +289,35 @@ h2 {
 }
 
 .plant-history {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 10px;
+    display: grid;
+    /* This creates as many 70px columns as will fit, then centers them */
+    grid-template-columns: repeat(auto-fill, 70px); 
+    justify-content: center; 
+    gap: 15px;
+    width: 100%;
+    margin-top: 15px;
 }
 
 .flower {
-  font-size: 40px;
-  background: #eaf7f1;
-  border-radius: 50%;
-  padding: 14px;
-  box-shadow: 0 0 15px rgba(120, 200, 160, 0.5);
-  transition: transform 0.2s ease;
+
+    font-size: 40px;
+    background: #eaf7f1;
+    border-radius: 50%;
+    width: 70px;  /* Giving it an explicit width */
+    height: 70px; /* Giving it an explicit height */
+    
+    /* The "Holy Trinity" of centering */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    box-shadow: 0 0 15px rgba(120, 200, 160, 0.5);
+    transition: transform 0.2s ease;
+    
+    /* This fixes the "text baseline" shift common with emojis */
+    line-height: 1; 
+    padding: 0; 
+
 }
 
 .flower:hover {
@@ -469,19 +491,6 @@ h2 {
   color: #245c4a;
 }
 
-.meter-bg {
-  width: 100%;
-  height: 12px;
-  background: #dff3ea;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.meter-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #7fc8a9, #5ba98b);
-  transition: width 0.4s ease;
-}
 
 
 /* LIGHT MODE */
@@ -526,6 +535,7 @@ body {
   border-radius: 0.5rem;
   margin-bottom: 1rem;
   transition: background-color 0.3s;
+
 }
 
 /* NAV LINKS */
@@ -555,14 +565,13 @@ body {
 
 /* TASKS */
 .task-row {
-  background-color: var(--task-bg);
-  padding: 0.5rem;
-  border-radius: 0.3rem;
-  margin-bottom: 0.5rem;
+  background-color: #eaf7f1; /* Use your reliable mint green */
+  padding: 8px;
+  border-radius: 14px;
+  margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background-color 0.3s;
 }
 
 .task.completed {
@@ -577,22 +586,32 @@ body {
 }
 
 /* PROGRESS BAR */
-.progress-bar, .meter-bg {
-  background-color: var(--progress-bg);
+.progress, .meter-fill {
+    height: 100%;
+    /* Add !important to ensure the theme color isn't overwritten by dark mode variables */
+    background: linear-gradient(90deg, #5cbf9d, #3ea082) !important;
+    transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    min-width: 5px; /* Ensures you can see at least a sliver when it starts */
 }
 
-.progress, .meter-fill {
-  background-color: var(--progress-fill);
+/* Ensure the background container has height and visibility */
+.progress-bar, .meter-bg {
+    background-color: #eaf7f1 !important; /* Soft mint background */
+    height: 14px;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 10px;
 }
 
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto auto;
-  gap: 20px;
-  max-width: 1100px;
-  margin: auto;
+  grid-template-columns: 1fr 1fr; /* Two equal fractions */
+  gap: 2px 20px;
+
+  width: 100%;
+  margin-top: 20px;
+  padding 0 40px;
 }
 
 
@@ -610,7 +629,7 @@ body {
   grid-column: 1 / span 2;   /* spans both columns */
   grid-row: 2;
   justify-self: center;
-  width: 80%;
+  width: 100%;
 }
 
 .timer-card {
@@ -621,9 +640,18 @@ body {
 .tasks-card {
   grid-column: 2;
   grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100%; /* Stretches to match the row height */
+  gap: 10px;
 }
 
-
+#task-list {
+    flex-grow: 0; /* This pushes the form to the very bottom */
+    overflow-y: auto; /* Adds a scrollbar if you have too many tasks */
+    margin: 15px 0;
+}
 
 .plant-wrapper {
   height: 100px;
@@ -633,7 +661,13 @@ body {
 }
 
 .plant {
-  font-size: 70px;
+    font-size: 70px; /* Reduced slightly to ensure it fits the grid lane */
+    width: 140px;    /* Explicit width */
+    height: 140px;   /* Explicit height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
 }
 
 .card.header {
@@ -648,3 +682,112 @@ body {
   min-height: 100px;
 }
 
+/* Container for the form */
+.task-form-container {
+  margin-bottom: 25px;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 10px;
+  background: #eaf7f1; /* Matches your streak/plant background */
+  padding: 8px;
+  border-radius: 20px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* The Text Input */
+#taskInput {
+  flex: 2;
+  border: none;
+  background: transparent;
+  padding: 12px 15px;
+  font-size: 1rem;
+  color: #245c4a;
+  outline: none;
+}
+
+#taskInput::placeholder {
+  color: #8fbdaf;
+}
+
+/* The Priority Dropdown */
+.priority-select {
+  border: 2px solid #ffffff;
+  border-radius: 14px;
+  background: white;
+  color: #245c4a;
+  padding: 5px 10px;
+  font-weight: bold;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.priority-select:hover {
+  border-color: #3ea082;
+}
+
+/* The Add Button */
+.add-btn {
+  background: #3ea082;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.3s;
+}
+
+.add-btn:hover {
+  background: #2f7d63;
+  transform: scale(1.05);
+}
+
+.add-btn:active {
+  transform: scale(0.95);
+}
+
+/* The Pulse Animation */
+@keyframes barPulse {
+  0% { box-shadow: 0 0 0 0 rgba(92, 191, 157, 0.7); }
+  50% { box-shadow: 0 0 15px 5px rgba(92, 191, 157, 0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(92, 191, 157, 0); }
+}
+
+.pulse-active {
+  animation: barPulse 0.6s ease-out;
+}
+
+/* Ensure the meter-fill has a smooth transition for width */
+.meter-fill {
+  transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+
+.harvest-button {
+    margin: 10px auto;
+    display: none;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    color: #b53660;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+    transition: transform 0.2s;
+    position: relative;
+    z-index: 10;
+    cursor: pointer !important;
+}
+
+.harvest-button:hover {
+    transform: scale(1.1);
+}
+
+.task span {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}

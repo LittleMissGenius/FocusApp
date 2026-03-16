@@ -1,10 +1,11 @@
-from flask import Flask, render_template, redirect, request, url_for, session, jsonify
+from flask import Flask, render_template, redirect, request, url_for, session, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from datetime import date
+import random
 
 
 
@@ -20,6 +21,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(200))
+    streak = db.Column(db.Integer, default=0)
 def get_streak(user_id):
     sessions = FocusSession.query.filter_by(user_id=user_id).all()
 
@@ -60,7 +62,13 @@ class Task(db.Model):
     completed = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
+class HarvestedPlant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    flower_type = db.Column(db.String(10), default="🌸") # Stores which emoji was grown
+    date_harvested = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Remember to run with app.app_context(): db.create_all() after adding this!
 
 
 @login_manager.user_loader
@@ -97,68 +105,70 @@ def login():
 @app.route("/dashboard")
 @login_required
 def dashboard():
+    tasks = Task.query.filter_by(user_id=current_user.id).all()
+    completed_count = len([t for t in tasks if t.completed])
+    
+    # Calculate progress for the initial page load
+    progress = 0
+    if len(tasks) > 0:
+        progress = int((completed_count / len(tasks)) * 100)
 
-   tasks = Task.query.filter_by(user_id=current_user.id)\
-        .order_by(Task.completed, Task.id.desc())\
-        .all()
+    active_plant = Plant.query.filter_by(user_id=current_user.id, completed=False).first()
+    # ... rest of your code ...
 
-   streak = get_streak(current_user.id)
-
-   total_tasks = len(tasks)
-   completed_tasks = len([t for t in tasks if t.completed])
-
-   progress = 0
-   if total_tasks > 0:
-        progress = int((completed_tasks / total_tasks) * 100)
-
-   active_plant = Plant.query.filter_by(
-        user_id=current_user.id,
-        completed=False
-    ).first()
-
-   if not active_plant:
-        active_plant = Plant(user_id=current_user.id)
+# IF NO PLANT EXISTS, CREATE ONE!
+    if not active_plant:
+        active_plant = Plant(user_id=current_user.id, stage=0)
         db.session.add(active_plant)
         db.session.commit()
 
-   plant_history = Plant.query.filter_by(
-        user_id=current_user.id,
-        completed=True
-    ).order_by(Plant.created_at).all()
-
-   return render_template(
-        "dashboard.html",
-        tasks=tasks,
-        streak=streak,
-        plant=active_plant,
-        history=plant_history,
-        progress=progress,
-        completed_tasks=completed_tasks,
-        total_tasks=total_tasks
-    )
-
-
+    user_streak = current_user.streak if hasattr(current_user, 'streak') else 0
+    current_streak = current_user.streak
+   
+    garden_flowers = HarvestedPlant.query.filter_by(user_id=current_user.id).all()
+    
+    return render_template("dashboard.html", 
+                           tasks=tasks, 
+                           plant=active_plant, 
+                           progress=progress,
+                           streak=current_streak,
+                           garden=garden_flowers)
 
 @app.route("/add_task", methods=["POST"])
 @login_required
 def add_task():
     task_text = request.form.get("task")
-
     priority = request.form.get("priority", "medium")
 
-    task = Task(
+    if not task_text:
+        return jsonify({"error": "Task text is required"}), 400
+
+    new_task = Task(
         title=task_text,
         priority=priority,
         user_id=current_user.id
     )
 
-    db.session.add(task)
+    db.session.add(new_task)
     db.session.commit()
 
-return redirect(url_for("dashboard"))
-
+    # We return JSON so the JavaScript can add the row instantly
+    return jsonify({
+        "id": new_task.id,
+        "title": new_task.title,
+        "priority": new_task.priority
     })
 
+@app.route("/delete_task/<int:id>", methods=["POST"])
+@login_required
+def delete_task(id):
+    task = Task.query.get_or_404(id)
+    if task.user_id != current_user.id:
+        return "Unauthorized", 403
+        
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({"success": True}) # Return JSON success
 
 
 
@@ -208,32 +218,20 @@ def logout():
 @login_required
 def log_session():
     minutes = int(request.form.get("minutes", 25))
+    session_record = FocusSession(minutes=minutes, user_id=current_user.id)
+    db.session.add(session_record)
 
-    session = FocusSession(minutes=minutes, user_id=current_user.id)
-    db.session.add(session)
-
-    # Get active plant
-    plant = Plant.query.filter_by(
-        user_id=current_user.id,
-        completed=False
-    ).first()
-
-    # Create plant if none exists
+    plant = Plant.query.filter_by(user_id=current_user.id, completed=False).first()
     if not plant:
         plant = Plant(user_id=current_user.id)
         db.session.add(plant)
 
-    # Grow plant
     plant.stage += 1
 
-    # If fully grown → archive and spawn new plant
     if plant.stage >= 3:
         plant.stage = 3
-        plant.completed = TruE
-
-    if plant.stage < 3:
-       plant.stage += 1
-
+        plant.completed = True # Fixed typo 'TruE'
+        # Only create a NEW plant after the old one is completed
         new_plant = Plant(user_id=current_user.id)
         db.session.add(new_plant)
 
@@ -244,25 +242,64 @@ def log_session():
 @login_required
 def complete_task(task_id):
     task = Task.query.get_or_404(task_id)
-
     if task.user_id != current_user.id:
-         abort(403)
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
 
+    # 1. Toggle task
     task.completed = not task.completed
     db.session.commit()
 
-    return redirect(url_for("dashboard"))
+    # 2. Calculate progress safely
+    all_tasks = Task.query.filter_by(user_id=current_user.id).all()
+    total = len(all_tasks)
+    completed = len([t for t in all_tasks if t.completed])
+    progress = int((completed / total) * 100) if total > 0 else 0
 
-
-@app.route("/delete_task/<int:id>", methods=["POST"])
-@login_required
-def delete_task(id):
-    task = Task.query.get_or_404(id)
-    db.session.delete(task)
+    # 3. Get the plant and update stage
+    plant = Plant.query.filter_by(user_id=current_user.id, completed=False).first()
+    if not plant:
+        plant = Plant(user_id=current_user.id)
+        db.session.add(plant)
+    
+    # Update stage based on task progress
+    if progress < 30: plant.stage = 0
+    elif progress < 60: plant.stage = 1
+    elif progress < 90: plant.stage = 2
+    else: plant.stage = 3
+    
     db.session.commit()
 
-return redirect(url_for("dashboard"))
+    # 4. Return EVERYTHING the JS needs
+    return jsonify({
+        "success": True,
+        "completed_count": completed,
+        "total_count": total,
+        "progress": progress,
+        "plant_stage": plant.stage
+    })
 
+@app.route("/harvest_plant", methods=["POST"])
+@login_required
+def harvest_plant():
+    plant = Plant.query.filter_by(user_id=current_user.id, completed=False).first()
+    
+    if plant and plant.stage >= 3:
+        # RANDOM FLOWER CODE GOES HERE
+        flower_options = ["🌸", "🌻", "🌷", "🌹", "🌼", "🌺", "🌵", "🪴"]
+        chosen_flower = random.choice(flower_options)
+
+        # Create the trophy
+        new_trophy = HarvestedPlant(user_id=current_user.id, flower_type=chosen_flower)
+        db.session.add(new_trophy)
+        
+        # Reset the current plant and update streak
+        plant.stage = 0
+        current_user.streak += 1
+        
+        db.session.commit()
+        return jsonify({"success": True})
+    
+    return jsonify({"success": False, "error": "Not ready"})
 
 
 @app.route("/toggle_theme", methods=["POST"])
