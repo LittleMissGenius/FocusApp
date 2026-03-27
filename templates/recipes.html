@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Saved Recipes</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+</head>
+<body class="{% if session.get('theme') == 'dark' %}dark-mode{% endif %}">
+  <div class="container">
+    <div class="card header">
+      <h1>🍽 Recipe Saver</h1>
+      <p class="subtitle">Save publicly accessible recipes and standardize ingredients to metric units.</p>
+      <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}" class="nav-button">🏡 Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="nav-button">🚪 Logout</a>
+      </div>
+    </div>
+
+    <div class="card recipes-card">
+      <h2>Add a recipe URL</h2>
+      <p class="subtitle">Note: paywalled content is not supported.</p>
+      {% if error %}
+        <p class="recipe-error">{{ error }}</p>
+      {% endif %}
+      <form method="POST" class="task-form-container">
+        <div class="input-wrapper">
+          <input type="url" name="source_url" placeholder="https://example.com/recipe" required>
+          <button type="submit" class="add-btn">Save Recipe</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card recipes-card">
+      <h2>Saved recipes</h2>
+      {% for recipe in recipes %}
+        <div class="recipe-item">
+          <h3>{{ recipe.title }}</h3>
+          <p><a href="{{ recipe.source_url }}" target="_blank" rel="noopener noreferrer">Original recipe link</a></p>
+          <h4>Ingredients (metric)</h4>
+          <ul>
+            {% for ingredient in recipe.ingredients %}
+              <li>{{ ingredient }}</li>
+            {% endfor %}
+          </ul>
+          {% if recipe.instructions %}
+            <h4>Instructions</h4>
+            <pre class="recipe-instructions">{{ recipe.instructions }}</pre>
+          {% endif %}
+        </div>
+      {% else %}
+        <p class="subtitle">No recipes saved yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>

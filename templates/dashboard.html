@@ -23,6 +23,7 @@
   </div>
 
  <div class="nav-links">
+  <a href="{{ url_for('recipes') }}" class="nav-button">🍽 Recipes</a>
   <a href="{{ url_for('stats') }}" class="nav-button">📊 Stats</a>
   <a href="{{ url_for('logout') }}" class="nav-button">🚪 Logout</a>
   <form method="POST" action="{{ url_for('toggle_theme') }}">
@@ -326,5 +327,4 @@ function updateProgressBar() {
 </div>
 
 </html>
-
 
