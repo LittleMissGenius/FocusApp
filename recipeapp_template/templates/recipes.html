@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Recipes - RecipeApp{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="header-row">
+    <h1>🍽 RecipeApp</h1>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+  <p>Save publicly accessible recipes and normalize ingredients to metric units.</p>
+
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <form method="POST" class="url-row">
+    <input type="url" name="source_url" placeholder="https://example.com/recipe" required>
+    <button type="submit">Save recipe</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Saved recipes</h2>
+  {% for recipe in recipes %}
+    <article class="recipe-item">
+      <h3>{{ recipe.title }}</h3>
+      <p><a href="{{ recipe.source_url }}" target="_blank" rel="noopener noreferrer">Original link</a></p>
+      <h4>Ingredients (metric)</h4>
+      <ul>
+        {% for ingredient in json.loads(recipe.ingredients_json) %}
+          <li>{{ ingredient }}</li>
+        {% endfor %}
+      </ul>
+      {% if recipe.instructions %}
+      <h4>Instructions</h4>
+      <pre>{{ recipe.instructions }}</pre>
+      {% endif %}
+    </article>
+  {% else %}
+    <p>No recipes yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

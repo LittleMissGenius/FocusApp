@@ -791,3 +791,40 @@ body {
   word-break: break-word;
   overflow-wrap: break-word;
 }
+
+.recipes-card {
+  min-height: auto;
+}
+
+.recipes-card input[type="url"] {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 15px;
+  font-size: 1rem;
+  color: #245c4a;
+  outline: none;
+}
+
+.recipe-item {
+  border-top: 1px solid #e6f1ec;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+.recipe-item ul {
+  margin-top: 6px;
+}
+
+.recipe-error {
+  color: #b53660;
+  font-weight: 600;
+}
+
+.recipe-instructions {
+  white-space: pre-wrap;
+  background: #f7fcfa;
+  padding: 12px;
+  border-radius: 12px;
+  font-family: inherit;
+}
