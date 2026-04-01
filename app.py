@@ -11,16 +11,24 @@ import json
 import re
 import requests
 import random
+import os
 
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "devkey"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///focus.db"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "devkey")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///focus.db"
+)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
+
+with app.app_context():
+     db.create_all()
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -486,6 +494,4 @@ def toggle_theme():
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
